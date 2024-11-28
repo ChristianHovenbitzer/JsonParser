@@ -5,7 +5,7 @@ namespace DefaultPublisher.JsonParser.SampleJson;
 /// This codeunit has a function for every attribute in the SampleJson file.
 /// </summary>
 /// <param name="PlainText">Text.</param>
-codeunit 50100 "JsonParser" implements IGlossary, IGlossDiv, IGlossList, IGlossEntry, IGlossDef
+codeunit 50100 "JsonParser" implements IRoot, IGlossary, IGlossDiv, IGlossList, IGlossEntry, IGlossDef
 {
     var
         JsonObject: Jsonobject;
@@ -28,11 +28,9 @@ codeunit 50100 "JsonParser" implements IGlossary, IGlossDiv, IGlossList, IGlossE
         if not JsonObject.Get(JsonKey, JsonToken) then
             exit;
 
-        if not JsonToken.IsValue() then
-            exit;
-
-        if JsonToken.AsValue().IsNull then
-            exit;
+        if JsonToken.IsValue() then
+            if JsonToken.AsValue().IsNull() then
+                exit;
 
         exit(true);
     end;
@@ -40,6 +38,18 @@ codeunit 50100 "JsonParser" implements IGlossary, IGlossDiv, IGlossList, IGlossE
     procedure GetValue(JsonKey: Text) JsonToken: JsonToken;
     begin
         JsonObject.Get(JsonKey, JsonToken);
+    end;
+    #endregion
+
+    #region IRoot    
+    procedure glossary() IGlossary: Interface IGlossary
+    var
+        JsonParser: Codeunit JsonParser;
+    begin
+        if CanGetValue('glossary') then
+            JsonParser.Parse(GetValue('glossary').AsObject());
+        IGlossary := JsonParser;
+        exit(JsonParser);
     end;
     #endregion
 

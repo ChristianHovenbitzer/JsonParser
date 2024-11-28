@@ -1,5 +1,10 @@
 namespace DefaultPublisher.JsonParser.SampleJson;
 
+interface IRoot
+{
+    procedure glossary(): Interface "IGlossary"
+}
+
 interface "IGlossary"
 {
     procedure title(): Text

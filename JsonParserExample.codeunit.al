@@ -5,7 +5,7 @@ codeunit 50101 "JsonParserExample"
     procedure ExampleUse()
     var
         JsonParserCU: Codeunit JsonParser;
-        JsonParser: Interface IGlossary;
+        JsonParser: Interface IRoot;
     begin
         JsonParserCU.Parse(GetJsonAsPlainText());
 
@@ -13,8 +13,8 @@ codeunit 50101 "JsonParserExample"
         JsonParser := JsonParserCU;
 
         // we have intellisense for each attribute in the JSON file.
-        Message(JsonParser.GlossDiv().GlossList().GlossEntry().ID());
-
+        Message(JsonParser.glossary().GlossDiv().GlossList().GlossEntry().ID());
+        // Message('JsonParser.glossary().GlossDiv().GlossList().GlossEntry().ID()');
     end;
 
 
