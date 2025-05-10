@@ -25,8 +25,11 @@
     "allowDownloadingSource": true,
     "includeSourceInSymbolFile": true
   },
-  "runtime": "14.0",
+  "runtime": "15.1",
   "features": [
     "NoImplicitWith"
+  ],
+  "resourceFolders": [
+    "Resources"
   ]
 }
