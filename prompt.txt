@@ -1,0 +1,162 @@
+# AL JSON Parser Interface Pattern Implementation Prompt
+
+You are implementing a type-safe JSON parser for AL (Application Language) using the **Interface-based JSON Parser Pattern**. This pattern provides strongly-typed access to JSON data through AL interfaces and codeunit implementations.
+
+## Core Pattern Concept
+
+The pattern consists of:
+1. **Interface definitions** that mirror the JSON structure
+2. **A single codeunit** that implements all interfaces and handles JSON parsing
+3. **Extension methods** for JsonObject that simplify data extraction
+
+## Key Principles
+
+### 1. Interface Design
+- Create one interface per JSON object/structure level
+- Method names should match JSON property names (or be descriptive equivalents)
+- Use appropriate AL data types: `Text`, `Integer`, `Decimal`, `DateTime`, `Boolean`
+- For nested objects: return `Interface "INestedObject"`
+- For arrays of objects: return `List of [Interface "IArrayItem"]`
+- Use `Access = Internal` and disable warnings with:
+  ```al
+  #pragma warning disable AS0011
+  #pragma warning disable AA0215
+  ```
+
+### 2. Single Codeunit Implementation
+- **One codeunit implements ALL interfaces** from the hierarchy
+- Use `#region InterfaceName` sections to organize implementations
+- The codeunit stores a single `JsonObject` variable that gets reused
+- Provide a `Parse(JsonObject)` method that sets the internal JsonObject and returns `this`
+
+### 3. Extension Methods Pattern
+The pattern relies on JsonObject extension methods:
+- `JsonObject.GetText(key, allowMissing)` 
+- `JsonObject.GetInteger(key, allowMissing)`
+- `JsonObject.GetDecimal(key, allowMissing)`
+- `JsonObject.GetDateTime(key, allowMissing)`
+- `JsonObject.GetBoolean(key, allowMissing)`
+- `JsonObject.GetObject(key, allowMissing)` - returns JsonObject
+- `JsonObject.GetArray(key, allowMissing)` - returns JsonArray
+
+### 4. Handling Arrays
+For JSON arrays containing objects, use this pattern:
+```al
+procedure ArrayProperty(): List of [Interface "IArrayItem"]
+var
+    JsonParser: Codeunit "YourJsonParser";
+    JsonToken: JsonToken;
+    ResultList: List of [Interface "IArrayItem"];
+begin
+    foreach JsonToken in JsonObject.GetArray('arrayPropertyName', true) do begin
+        ResultList.Add(JsonParser.Parse(JsonToken.AsObject()));
+        Clear(JsonParser); // to avoid object reuse
+    end;
+    exit(ResultList);
+end;
+```
+
+### 5. Handling Nested Objects
+For nested JSON objects:
+```al
+procedure NestedObject(): Interface "INestedObject"
+var
+    JsonParser: Codeunit "YourJsonParser";
+begin
+    exit(JsonParser.Parse(JsonObject.GetObject('nestedPropertyName', true)));
+end;
+```
+
+## Implementation Steps
+
+1. **Analyze the JSON structure** - identify all object levels and arrays
+2. **Create interfaces** - one per object structure level
+3. **Create the parser codeunit** that implements all interfaces
+4. **Implement each interface** in separate regions within the same codeunit
+5. **Test with sample JSON** to ensure correct parsing
+
+## Common Issues & Solutions
+
+### Issue 1: Multiple Interface Implementation
+**Problem**: Initially tried creating separate codeunits for each interface
+**Solution**: Use ONE codeunit that implements ALL interfaces - this allows reusing the same JsonObject variable
+
+### Issue 2: Array Handling
+**Problem**: First attempted to create wrapper interfaces for arrays (like ISearchResults wrapping ISearchResult)
+**Solution**: Return `List of [Interface]` directly from the main interface, iterate through JsonArray using foreach
+
+### Issue 3: Object Reuse
+**Problem**: JsonParser instances getting reused causing data corruption
+**Solution**: Always call `Clear(JsonParser)` after adding to lists in foreach loops
+
+### Issue 4: Extension Methods
+**Problem**: Tried using standard AL JsonObject.Get() methods
+**Solution**: Use the custom extension methods like `GetText()`, `GetInteger()` that handle missing values gracefully
+
+## Template Structure
+
+```al
+// Interface file
+interface "IMainObject"
+{
+    Access = Internal;
+    procedure SimpleProperty(): Text
+    procedure NestedObject(): Interface "INestedObject"
+    procedure ArrayProperty(): List of [Interface "IArrayItem"]
+}
+
+interface "INestedObject"
+{
+    Access = Internal;
+    procedure Property1(): Text
+    procedure Property2(): Integer
+}
+
+interface "IArrayItem"
+{
+    Access = Internal;
+    procedure ItemProperty(): Text
+}
+
+// Parser codeunit
+codeunit XXXXX "JsonParser" implements "IMainObject", "INestedObject", "IArrayItem"
+{
+    Access = Internal;
+    var JsonObject: JsonObject;
+    
+    procedure Parse(NewJsonObject: JsonObject): Codeunit "JsonParser"
+    begin
+        JsonObject := NewJsonObject;
+        exit(this);
+    end;
+    
+    #region IMainObject
+    // Implement all IMainObject methods
+    #endregion
+    
+    #region INestedObject  
+    // Implement all INestedObject methods
+    #endregion
+    
+    #region IArrayItem
+    // Implement all IArrayItem methods  
+    #endregion
+}
+```
+
+## Usage Example
+```al
+var
+    JsonParser: Codeunit "JsonParser";
+    MainObject: Interface "IMainObject";
+    ArrayItems: List of [Interface "IArrayItem"];
+begin
+    MainObject := JsonParser.Parse(YourJsonObject);
+    ArrayItems := MainObject.ArrayProperty();
+    // Use strongly-typed access to JSON data
+end;
+```
+
+When implementing this pattern, start with the JSON structure analysis and work your way up from the deepest nested objects to the root level.
+Start by creating the interface and then the Implementation.
+The key insight is that one codeunit can implement multiple interfaces by reusing the same JsonObject variable for different contexts.
